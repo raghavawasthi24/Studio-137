@@ -1,376 +1,232 @@
+import React, { useEffect, useState } from "react";
+import forwardIcon from "../../assests/forward.svg";
+import backIcon from "../../assests/back.svg";
 import "./Quiz.css";
-import React, { useState } from "react";
-import CustomSlider from "./components/customSlider/customSlider.jsx";
+import { useNavigate } from "react-router-dom";
+
+let customQuestions = [
+    { Statement: "Our church's ministry strategy is firm but flexible to accommodate unexpected game changers such as AI.", num: 1 },
+    {
+        Statement: "Our leadership team knows of the potential risks and rewardsof leveraging AI.",
+        num: 2,
+    },
+    {
+        Statement:
+            "Our leadership team understands the value of tapping experts to educate our staff about AI.",
+        num: 3,
+    },
+    {
+        Statement:
+            "Our leadership team understands the value of tapping experts to educate our staff about AI.",
+        num: 4,
+    },
+    {
+        Statement:
+            "Our s to educate our staff about AI.",
+        num: 5,
+    },
+    {
+        Statement:
+            "Our leadership team understands the value of e our staff about AI.",
+        num: 6,
+    },
+];
+
 function Quiz() {
-  let ques = [
-    "I have ambitious aims of making a difference.",
-    "My leadership journey has progressed as I anticipated.",
-    "I have spent fewer than 4 years in full time service or ministry.",
-  ];
+    const [isSmallScreen, setSmallScreen] = useState(window.matchMedia("(max-width: 768px)").matches);
+    const navigate = useNavigate();
 
-  const [quesNo, setQuesNo] = useState(1);
-  const [quesContent, setQuesContent] = useState(ques[0]);
-  const [sliderNone, setSliderNone] = useState(true);
-  const [s1, setS1] = useState(true);
-  const [s2, setS2] = useState(false);
-  const [s3, setS3] = useState(false);
-  const [s4, setS4] = useState(false);
-  const [s5, setS5] = useState(false);
-  const [q1, setQ1] = useState("s1");
-  const [q2, setQ2] = useState("s1");
-  const [q3, setQ3] = useState("s1");
-  const handleQuestionChangeNext = () => {
-    if (quesNo == 3) {
-      if (s1) {
-        setQ3("s1");
-      } else if (s2) {
-        setQ3("s2");
-      } else if (s3) {
-        setQ3("s3");
-      } else if (s4) {
-        setQ3("s4");
-      } else if (s5) {
-        setQ3("s5");
-      }
-      return;
+    const handleNavigationClick = () => {
+        navigate("/");
     }
-    if (quesNo == 1) {
-      setQuesNo(2);
-      setQuesContent(ques[1]);
-      if (s1) {
-        setQ1("s1");
-      } else if (s2) {
-        setQ1("s2");
-      } else if (s3) {
-        setQ1("s3");
-      } else if (s4) {
-        setQ1("s4");
-      } else if (s5) {
-        setQ1("s5");
-      }
 
-      if (q2 == "s1") {
-        handleS1();
-      } else if (q2 == "s2") {
-        handleS2();
-      } else if (q2 == "s3") {
-        handleS3();
-      } else if (q2 == "s4") {
-        handleS4();
-      } else if (q2 == "s5") {
-        handleS5();
-      }
-    } else if (quesNo == 2) {
-      setQuesNo(3);
-      setQuesContent(ques[2]);
+    useEffect(() => {
+        const handleScreenSizeChange = (e) => setSmallScreen(e.matches);
+        const mediaQueryList = window.matchMedia("(max-width: 768px)");
 
-      if (s1) {
-        setQ2("s1");
-      } else if (s2) {
-        setQ2("s2");
-      } else if (s3) {
-        setQ2("s3");
-      } else if (s4) {
-        setQ2("s4");
-      } else if (s5) {
-        setQ2("s5");
-      }
+        mediaQueryList.addEventListener('change', handleScreenSizeChange);
 
-      if (q3 == "s1") {
-        handleS1();
-      } else if (q3 == "s2") {
-        handleS2();
-      } else if (q3 == "s3") {
-        handleS3();
-      } else if (q3 == "s4") {
-        handleS4();
-      } else if (q3 == "s5") {
-        handleS5();
-      }
+        return () => {
+            mediaQueryList.removeEventListener('change', handleScreenSizeChange);
+        };
+    }, []);
+
+    const [currentQuestionNum, setCurrentQuestionNum] = useState(1);
+
+    const [progressBars, setProgressBars] = useState([
+        { name: "STRATEGY", score: 20, key: 1 },
+        { name: "UNDERSTANDING", score: 0, key: 2 },
+        { name: "APPLICATION", score: 0, key: 3 },
+        { name: "DIRECTION", score: 0, key: 4 },
+    ]);
+
+    const [sliderValue, setSliderValue] = useState("0");
+    const [responseRecords, setResponseRecords] = useState([]);
+
+    function handleQuestionNavigation(direction) {
+        let matchingRecord = checkMatchingRecord(currentQuestionNum);
+
+        if (
+            direction === "forward" &&
+            currentQuestionNum !== 6 &&
+            matchingRecord.length > 0
+        ) {
+            let nextQuestionRecord = checkMatchingRecord(currentQuestionNum + 1);
+
+            if (nextQuestionRecord.length > 0) {
+                setSliderValue(nextQuestionRecord[0].sliderValue);
+            } else {
+                setSliderValue("0");
+            }
+
+            handleProgressBarUpdate("Increase");
+            setCurrentQuestionNum((prev) => prev + 1);
+        } else if (direction === "back" && currentQuestionNum !== 1) {
+            let previousQuestionRecord = checkMatchingRecord(currentQuestionNum - 1);
+            setSliderValue(previousQuestionRecord[0].sliderValue);
+            handleProgressBarUpdate("Decrease");
+            setCurrentQuestionNum((prev) => prev - 1);
+        } else if (direction === "back" && currentQuestionNum === 1) {
+            handleNavigationClick();
+        }
     }
-  };
 
-  const handleQuestionChangePrev = () => {
-    if (quesNo == 2) {
-      setQuesNo(1);
-      setQuesContent(ques[0]);
+    function handleSliderChange(event) {
+        if (responseRecords.length === 0) {
+            setResponseRecords([
+                { ques: currentQuestionNum, sliderValue: event.target.value },
+            ]);
+        } else {
+            let matchingRecord = checkMatchingRecord(currentQuestionNum);
 
-      if (s1) {
-        setQ2("s1");
-      } else if (s2) {
-        setQ2("s2");
-      } else if (s3) {
-        setQ2("s3");
-      } else if (s4) {
-        setQ2("s4");
-      } else if (s5) {
-        setQ2("s5");
-      }
+            if (matchingRecord.length > 0) {
+                setResponseRecords((prev) =>
+                    prev.map((element) =>
+                        element.ques === currentQuestionNum
+                            ? { ...element, sliderValue: event.target.value }
+                            : { ...element }
+                    )
+                );
+            } else {
+                setResponseRecords((prev) => [
+                    ...prev,
+                    { ques: currentQuestionNum, sliderValue: event.target.value },
+                ]);
+            }
+        }
 
-      if (q1 == "s1") {
-        handleS1();
-      } else if (q1 == "s2") {
-        handleS2();
-      } else if (q1 == "s3") {
-        handleS3();
-      } else if (q1 == "s4") {
-        handleS4();
-      } else if (q1 == "s5") {
-        handleS5();
-      }
-    } else if (quesNo == 3) {
-      setQuesNo(2);
-      setQuesContent(ques[1]);
+        setSliderValue(event.target.value);
+        setTimeout(() => {
+            setSliderValue("0");
+        }, 250);
 
-      if (s1) {
-        setQ3("s1");
-      } else if (s2) {
-        setQ3("s2");
-      } else if (s3) {
-        setQ3("s3");
-      } else if (s4) {
-        setQ3("s4");
-      } else if (s5) {
-        setQ3("s5");
-      }
-
-      if (q2 == "s1") {
-        handleS1();
-      } else if (q2 == "s2") {
-        handleS2();
-      } else if (q2 == "s3") {
-        handleS3();
-      } else if (q2 == "s4") {
-        handleS4();
-      } else if (q2 == "s5") {
-        handleS5();
-      }
-    } else {
-      return;
+        if (currentQuestionNum !== 6) {
+            handleProgressBarUpdate("Increase");
+            setCurrentQuestionNum((prev) => prev + 1);
+        }
     }
-  };
 
-  const handleS1 = () => {
-    setS1(true);
-    setS2(false);
-    setS3(false);
-    setS4(false);
-    setS5(false);
-  };
+    function checkMatchingRecord(num) {
+        return responseRecords.filter((element) => num === element.ques);
+    }
 
-  const handleS2 = () => {
-    setS2(true);
-    setS1(false);
-    setS3(false);
-    setS4(false);
-    setS5(false);
-  };
-  const handleS3 = () => {
-    setS3(true);
-    setS2(false);
-    setS1(false);
-    setS4(false);
-    setS5(false);
-  };
-  const handleS4 = () => {
-    setS4(true);
-    setS2(false);
-    setS3(false);
-    setS1(false);
-    setS5(false);
-  };
-  const handleS5 = () => {
-    setS5(true);
-    setS2(false);
-    setS3(false);
-    setS4(false);
-    setS1(false);
-  };
-  return (
-    <div className="App">
-      <header id="header">
-        <div className="assessment-title" id="assessment-title">
-          Are you Disillusioned?
-        </div>
-      </header>
-      <main className="main-className">
-        <div className="container assessment">
-          <div>
-            <div className="steps-container">
-              <div>
-                <div className="steps">
-                  <div className="spacer"></div>
-                  <div>
-                    <div className="progress-bar">
-                      <div className="bar-section">
-                        <div className="bar">
-                          <span
-                            className="MuiLinearProgress-root custom-bar css-7p5u54"
-                            role="progressbar"
-                          >
-                            <span
-                              className={`MuiLinearProgress-bar css-t752vm  ${
-                                quesNo == 1
-                                  ? " p20"
-                                  : quesNo == 2
-                                  ? " p40"
-                                  : " p60"
-                              }`}
-                            ></span>
-                          </span>
-                        </div>
-                        <div className="section-title">IDEALISTIC</div>
-                      </div>
-                      <div className="bar-section">
-                        <div className="bar">
-                          <span
-                            className="MuiLinearProgress-root  custom-bar css-7p5u54"
-                            role="progressbar"
-                            aria-valuenow="20"
-                            aria-valuemin="0"
-                            aria-valuemax="100"
-                          >
-                            <span className=" disabled"></span>
-                          </span>
-                        </div>
-                        <div className="section-title-disabled">
-                          DISILLUSIONED
-                        </div>
-                      </div>
-                      <div className="bar-section">
-                        <div className="bar">
-                          <span
-                            className="MuiLinearProgress-root custom-bar css-7p5u54"
-                            role="progressbar"
-                            aria-valuenow="20"
-                            aria-valuemin="0"
-                            aria-valuemax="100"
-                          >
-                            <span className=" disabled"></span>
-                          </span>
-                        </div>
-                        <div className="section-title-disabled">CYNICAL</div>
-                      </div>
-                      <div className="bar-section">
-                        <div className="bar">
-                          <span
-                            className="MuiLinearProgress-root custom-bar css-7p5u54"
-                            role="progressbar"
-                            aria-valuenow="20"
-                            aria-valuemin="0"
-                            aria-valuemax="100"
-                          >
-                            <span className="disabled"></span>
-                          </span>
-                        </div>
-                        <div className="section-title-disabled">HOPEFUL</div>
-                      </div>
+    let currentQuestionStatement = customQuestions.filter(
+        (element) => currentQuestionNum === element.num
+    );
+
+    function handleProgressBarUpdate(state) {
+        if (state === "Increase") {
+            setProgressBars((prev) =>
+                prev.map((element) =>
+                    element.name === "STRATEGY"
+                        ? { ...element, score: element.score + 20 }
+                        : { ...element }
+                )
+            );
+        } else {
+            setProgressBars((prev) =>
+                prev.map((element) =>
+                    element.name === "STRATEGY"
+                        ? { ...element, score: element.score - 20 }
+                        : { ...element }
+                )
+            );
+        }
+    }
+
+    return (
+        <section className="CustomQuestionnaire">
+            <div className="QuestionnaireContainer">
+                {isSmallScreen && (
+                    <div className="ProgressBars2">
+                        <p className="progress-percent-text" variant="determinate" style={{ marginLeft: `${currentQuestionNum === 3 ? `calc(${(17 * currentQuestionNum) + 3}% - 2ch)` : `calc(${17 * currentQuestionNum}% - 2ch)`}`, marginBottom: "0px" }}>
+                            {progressBars[0].score - 14 * currentQuestionNum}%
+                        </p>
                     </div>
-                  </div>
-                  <div className="progress-indicator">
-                    <strong>{quesNo}</strong>/20
-                  </div>
-
-                  <div>
-                    <div className="question">
-                      <p>{quesContent}</p>
+                )}
+                {!isSmallScreen && (
+                    <div className="ProgressBars2">
+                        <p className="progress-percent-text" variant="determinate" style={{ marginLeft: `${currentQuestionNum === 1 ? `calc(${progressBars[0].score - 14 * currentQuestionNum - 2}% - 2ch)` : `calc(${progressBars[0].score - 14 * currentQuestionNum - 4}% - 2ch)`}`, marginBottom: "0px" }}>
+                            {progressBars[0].score - 14 * currentQuestionNum}%
+                        </p>
                     </div>
-                    <CustomSlider
-                      quesNo={quesNo}
-                      setQuesNo={setQuesNo}
-                      quesContent={quesContent}
-                      setQuesContent={setQuesContent}
-                      sliderNone={sliderNone}
-                      setSliderNone={setSliderNone}
-                      s1={s1}
-                      s2={s2}
-                      s3={s3}
-                      s4={s4}
-                      s5={s5}
-                      setS1={setS1}
-                      setS2={setS2}
-                      setS3={setS3}
-                      setS4={setS4}
-                      setS5={setS5}
-                      q1={q1}
-                      setQ1={setQ1}
-                      q2={q2}
-                      setQ2={setQ2}
-                      q3={q3}
-                      setQ3={setQ3}
-                      handleS1={handleS1}
-                      handleS2={handleS2}
-                      handleS3={handleS3}
-                      handleS4={handleS4}
-                      handleS5={handleS5}
-                    />
-                  </div>
-                  <div className="step-buttons">
-                    <button
-                      onClick={handleQuestionChangePrev}
-                      className="  css-1ujsas3"
-                      tabindex="0"
-                      type="button"
-                    >
-                      <svg
-                        width="28"
-                        height="15"
-                        viewBox="0 0 28 15"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          d="M27 7.5H2"
-                          stroke="#4A4A4A"
-                          stroke-width="1.5"
-                          stroke-linecap="square"
-                        />
-                        <path
-                          d="M7.19653 1.13818L0.834688 7.50003L7.19653 13.8619"
-                          stroke="#4A4A4A"
-                          stroke-width="1.5"
-                        />
-                      </svg>
-                      &nbsp;&nbsp;<span>Prev</span>
-                      <span className="MuiTouchRipple-root css-w0pj6f"></span>
-                    </button>
-                    <button
-                      onClick={handleQuestionChangeNext}
-                      className="css-1ujsas3"
-                      tabindex="-1"
-                      type="button"
-                      disabled=""
-                    >
-                      <span>Next</span>&nbsp;&nbsp;
-                      <svg
-                        width="28"
-                        height="15"
-                        viewBox="0 0 28 15"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          d="M1 7.5H26"
-                          stroke="#4A4A4A"
-                          stroke-width="1.5"
-                          stroke-linecap="square"
-                        />
-                        <path
-                          d="M20.8035 1.13818L27.1653 7.50003L20.8035 13.8619"
-                          stroke="#4A4A4A"
-                          stroke-width="1.5"
-                        />
-                      </svg>
-                    </button>
-                  </div>
+                )}
+                <div className="ProgressBars">
+                    {progressBars.map((element) => (
+                        <div style={{ display: `${isSmallScreen && element.name !== "STRATEGY" ? "none" : "flex"}` }} key={element.key} className="ProgressBarWrapper">
+                            <progress id={element.name} max="100" value={element.score}></progress>
+                            <label style={{ color: `${element.name === "STRATEGY" ? "rgb(110, 12, 249)" : "black"}`, marginTop: "12px" }} htmlFor={element.name}>
+                                {element.name}
+                            </label>
+                        </div>
+                    ))}
                 </div>
-              </div>
+                <div className="QuestionNumber">
+                    <p>{currentQuestionNum} / 6</p>
+                </div>
+                <p className="QuestionStatement">{currentQuestionStatement[0].Statement}</p>
+                <div className="SliderWrapper">
+                    <input
+                        id="Slider"
+                        step={25}
+                        value={sliderValue}
+                        type="range"
+                        list="sliderOptions"
+                        onChange={handleSliderChange}
+                    />
+                    <datalist id="sliderOptions">
+                        <option value="0" label="Strongly Disagree"></option>
+                        <option value="25" label="Disagree"></option>
+                        <option value="50" label="Neutral"></option>
+                        <option value="75" label="Agree"></option>
+                        <option value="100" label="Strongly Agree"></option>
+                    </datalist>
+                </div>
+                <div className="NavigationButtons">
+                    <div
+                        onClick={() => {
+                            handleQuestionNavigation("back");
+                        }}
+                        className="ButtonWrapper"
+                    >
+                        <img src={backIcon} alt="Back arrow" />
+                        <p>PREV</p>
+                    </div>
+                    {checkMatchingRecord(currentQuestionNum).length > 0 && currentQuestionNum !== 6 && (
+                        <div
+                            onClick={() => {
+                                handleQuestionNavigation("forward");
+                            }}
+                            className="ButtonWrapper"
+                        >
+                            <p style={{ borderBottom: "1px solid rgb(110, 12, 249)" }}>NEXT</p>
+                            <img src={forwardIcon} alt="Forward arrow" />
+                        </div>
+                    )}
+                </div>
             </div>
-          </div>
-        </div>
-      </main>
-    </div>
-  );
+        </section>
+    );
 }
 
 export default Quiz;
