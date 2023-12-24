@@ -1,6 +1,7 @@
 import React from 'react';
 import "./Home.css";
 import Man from "../../assests/man.jpg";
+import { Link } from 'react-router-dom';
 
 export default function Home() {
   return (
@@ -19,7 +20,7 @@ export default function Home() {
                 </ul>
             </div>
             <div>
-                <button>GET STARTED</button>
+                <Link to="/quiz"><button>GET STARTED</button></Link>
             </div>
         </div>
     </div>
