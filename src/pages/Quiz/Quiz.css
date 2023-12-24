@@ -7,16 +7,16 @@ header {
 	margin: 0 auto;
 	position: relative;
 	width: 100%;
-}
 
-header .assessment-title {
-	color: #e74b16;
-	flex: 1 1 auto;
-	font-family: futura-pt, sans-serif;
-	font-size: 24px;
-	font-weight: 700;
-	text-align: center;
-	text-transform: uppercase;
+    .assessment-title {
+        color: #e74b16;
+        flex: 1 1 auto;
+        font-family: futura-pt, sans-serif;
+        font-size: 24px;
+        font-weight: 700;
+        text-align: center;
+        text-transform: uppercase;
+    }
 }
 
 main .container {
